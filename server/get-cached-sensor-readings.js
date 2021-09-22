@@ -19,8 +19,8 @@ setInterval(() => {
     /*
     Set the values of the cache on receiving new readings
     */
-    cache.temperature = temperature
-    cache.humidity = humidity
+    cache.temperature = temperature.toFixed(1)
+    cache.humidity = humidity.toFixed(1)
   })
 }, 2000)
 
