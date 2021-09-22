@@ -18,6 +18,8 @@ const getSensorReadings = (callback) => {
     The second and third arguments would be the results (temperature and humidty respectively)
     */
     callback(null, temperature, humidity)
+    console.log(temperature)
+    console.log(humidity)
   })
 }
 
