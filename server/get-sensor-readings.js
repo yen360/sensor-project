@@ -10,6 +10,7 @@ const getSensorReadings = (callback) => {
       /*
       If there is an error, call the callback function with the error as its first argument
       */
+      console.log( 'temp: ' + temperature.toFixed(1) + '°C, ' + 'humidity: ' + humidity.toFixed(1) + '%')
       return callback(err)
     }
 
