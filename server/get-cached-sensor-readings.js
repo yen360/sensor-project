@@ -4,8 +4,8 @@ const getSensorReadings = require('./get-sensor-readings')
 Instantiate the cache. In this case its a simple variable stored in local memory
 */
 const cache = {
-  temperature: null,
-  humidity: null
+  temperature: 0.00,
+  humidity: 0.00
 }
 
 /*
@@ -19,8 +19,8 @@ setInterval(() => {
     /*
     Set the values of the cache on receiving new readings
     */
-    cache.temperature = temperature.toFixed(1)
-    cache.humidity = humidity.toFixed(1)
+    cache.temperature = temperature
+    cache.humidity = humidity
   })
 }, 2000)
 
