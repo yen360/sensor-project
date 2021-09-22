@@ -1,21 +1,16 @@
 const express = require('express');
 const app = express();
-const sensor = require('node-dht-sensor')
+const getCachedSensorReadings = require('./get-cached-sensor-readings')
 
+/*
+We now utilize the synchronous methods exported from the 'get-cached-sensor-readings' module
+*/
 app.get('/temperature',function(req,res){
-  sensor.read(22, 4, function(err, temperature, humidity) {
-    if (!err) {
-       res.send('temp: ' + temperature.toFixed(1) + '°C')
-    }
-  });
+  res.send('Temperature: ' + getCachedSensorReadings.getTemperature().toFixed(1) + '°C')
 });
 
 app.get('/humidity',function(req,res){
-  sensor.read(22, 4, function(err, temperature, humidity) {
-    if (!err) {
-       res.send('humidity: ' + humidity.toFixed(1) + '°%')
-    }
-  });
+  res.send('Humidity: ' + getCachedSensorReadings.getHumidity().toFixed(1) + '%')
 });
 
 app.listen(3000,function(){
