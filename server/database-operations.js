@@ -1,6 +1,6 @@
 const sqlite3 = require('sqlite3')
 const path = require('path')
-const db = new sqlite3.Database(path.resolve('./.sqlite.db'))
+const db = new sqlite3.Database(path.resolve('server','.sqlite.db'))
 
 const insertReading = (type, reading) => {
   db.run(`INSERT INTO ${type} VALUES (datetime('now'), ${reading});`)
