@@ -74,8 +74,8 @@ const fetchTemperature = () => {
     .then(data => {
       const now = new Date()
       const timeNow = now.getHours() + ':' + now.getMinutes() + ':' + now.getSeconds()
-      pushData(temperatureChartConfig.data.labels, timeNow, 10)
-      pushData(temperatureChartConfig.data.datasets[0].data, data.value, 10)
+      pushData(temperatureChartConfig.data.labels, timeNow, 50)
+      pushData(temperatureChartConfig.data.datasets[0].data, data.value, 50)
       temperatureChart.update()
       temperatureDisplay.innerHTML = '<strong>' + data.value + '</strong>'
     })
@@ -89,8 +89,8 @@ const fetchHumidity = () => {
     .then(data => {
       const now = new Date()
       const timeNow = now.getHours() + ':' + now.getMinutes() + ':' + now.getSeconds()
-      pushData(humidityChartConfig.data.labels, timeNow, 10)
-      pushData(humidityChartConfig.data.datasets[0].data, data.value, 10)
+      pushData(humidityChartConfig.data.labels, timeNow, 50)
+      pushData(humidityChartConfig.data.datasets[0].data, data.value, 50)
       humidityChart.update()
       humidityDisplay.innerHTML = '<strong>' + data.value + '</strong>'
     })
