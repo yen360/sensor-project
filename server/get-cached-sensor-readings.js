@@ -1,4 +1,3 @@
-const getSensorReadings = require('./get-sensor-readings')
 var sensor = require('node-dht-sensor')
 
 /*
@@ -22,7 +21,6 @@ setInterval(() => {
     */
     cache.temperature = temperature.toFixed(1)
     cache.humidity = humidity.toFixed(1)
-    console.log(cache.temperature,cache.humidity)
   })
 }, 2000)
 
