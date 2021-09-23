@@ -1,4 +1,5 @@
 const getSensorReadings = require('./get-sensor-readings')
+var sensor = require('node-dht-sensor')
 
 /*
 Instantiate the cache. In this case its a simple variable stored in local memory
@@ -12,15 +13,15 @@ const cache = {
 Run a function to get the sensor readings every 2 seconds (the same sampling rate as our sensor)
 */
 setInterval(() => {
-  getSensorReadings((err, temperature, humidity) => {
+  sensor.read(22, 4, function(err, temperature, humidity) {
     if (err) {
       return console.error(err)
     }
     /*
     Set the values of the cache on receiving new readings
     */
-    cache.temperature = temperature
-    cache.humidity = humidity
+    cache.temperature = temperature.toFixed(1)
+    cache.humidity = humidity.toFixed(1)
   })
 }, 2000)
 
