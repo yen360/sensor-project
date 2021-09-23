@@ -22,6 +22,7 @@ setInterval(() => {
     */
     cache.temperature = temperature.toFixed(1)
     cache.humidity = humidity.toFixed(1)
+    console.log(cache.temperature,cache.humidity)
   })
 }, 2000)
 
