@@ -1,8 +1,9 @@
 var sensor = require('node-dht-sensor')
-/**
- * Import the database module that we created earlier
- */
 const databaseOperations = require('./database-operations')
+/**
+ * Import the notify function from the notifier module
+ */
+const {notify} = require('./notifier')
 
 /*
 Instantiate the cache. In this case its a simple variable stored in local memory
@@ -25,8 +26,14 @@ setInterval(() => {
      */
     databaseOperations.insertReading('temperature', temperature)
     databaseOperations.insertReading('humidity', humidity)
-    cache.temperature = temperature.toFixed(1)
-    cache.humidity = humidity.toFixed(1)
+    if (cache.temperature !== temperature) {
+      notify(temperature, 'temperature')
+    }
+    if (cache.humidity !== humidity) {
+      notify(humidity, 'humidity')
+    }
+    cache.temperature = temperature
+    cache.humidity = humidity
   })
 }, 2000)
 
