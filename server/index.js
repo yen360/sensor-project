@@ -123,7 +123,12 @@ const httpServer = http.Server(app)
 /**
  * Socket.io implements its own routes on top of the existing ones by wrapping our HTTP server
  */
-const io = socketIo(httpServer)
+const io = socketIo(httpServer, {
+  cors: {
+    origin: "http://192.168.0.118:3080",
+    methods: ["GET", "POST"]
+  }
+});
 
 io.on('connection', socket => {
   /**
