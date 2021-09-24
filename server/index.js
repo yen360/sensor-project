@@ -1,183 +1,63 @@
-const express = require('express')
-const path = require('path')
-const app = express()
-const getCachedSensorReadings = require('./get-cached-sensor-readings')
+var sensor = require('node-dht-sensor')
 const databaseOperations = require('./database-operations')
+var admin = require('firebase-admin')
 
-app.use('/public', express.static(path.join(__dirname, 'public')))
+/**
+ * Read the JSON key that was downloaded from firebase, in this case, it has
+ * been placed in the "/home/pi" directory, and named "firebase-key.json"
+ * You can change this to the location where your key is.
+ *
+ * Remember, this key should not be accessible by the public, and so should not
+ * be kept inside the repository
+ */
+const serviceAccount = require('/home/pi/sensor-project-74518-firebase-adminsdk-4xyti-8e6855e096.json')
 
-app.get('/temperature', function (req, res) {
-  res.json({
-    value: getCachedSensorReadings.getTemperature().toFixed(1)
-  })
+/**
+ * The firebase admin SDK is initialized with the key and the project URL
+ * Change the "databaseURL" to match that of your application.
+ * Once the admin object is initialized, it will have access to all the
+ * functionality that firebase provides, and can now write to the database
+ */
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: "https://sensor-project-74518-default-rtdb.asia-southeast1.firebasedatabase.app"
 })
 
-app.get('/temperature/history', function (req, res) {
-  databaseOperations.fetchLatestReadings('temperature', 10, (err, results) => {
+/**
+ * Initialize the database, and create refs for the temperature
+ * and humidity keys on our database. This is very similar to the refs we
+ * created on the client side.
+ */
+const db = admin.database()
+const temperatureRef = db.ref('temperature')
+const humidityRef = db.ref('humidity')
+
+/**
+ * Create a task that runs after a fixed interval of time
+ *
+ * Here, we have set the interval to be slightly longer than it was
+ * before. This is to account for the delay that may occur in the network,
+ * since we are not running the databas eon the local machine anymore.
+ * If you find that the application is not communicating with firebase
+ * as fast as you would like, try increasing this interval based on your
+ * network speed.
+ */
+setInterval(() => {
+  /**
+   * Retrieve sensor readings
+   */
+  sensor.read(22, 4, function(err, temperature, humidity) {
     if (err) {
       /**
-       * If any error occured, send a 500 status to the frontend and log it
+       * If any error comes up, log it to the console and return from this
+       * function call
        */
-      console.error(err)
-      return res.status(500).end()
+      return console.error(err)
     }
-    /**
-     * Return the reverse of the results obtained from the database.
-     */
-    res.json(results.reverse())
+
+    databaseOperations.insertReading('temperature', temperature)
+    databaseOperations.insertReading('humidity', humidity)
+    temperatureRef.set(temperature)
+    humidityRef.set(humidity)
   })
-})
-
-app.get('/temperature/range', function (req, res) {
-  /**
-   * Here, the "start" and "end" datetimes for the range of readings are
-   * expected to be received through the query parameters. This is spllied as part
-   * of the URL request
-   */
-  const {start, end} = req.query
-
-  /**
-   * The "fetchReadingsBetweenTime" method is called, which returns an array of results, which we return as JSON to the client side
-   */
-  databaseOperations.fetchReadingsBetweenTime('temperature', start, end, (err, results) => {
-    if (err) {
-      console.error(err)
-      return res.status(500).end()
-    }
-    res.json(results)
-  })
-})
-
-app.get('/temperature/average', function (req, res) {
-  const {start, end} = req.query
-  databaseOperations.getAverageOfReadingsBetweenTime('temperature', start, end, (err, results) => {
-    if (err) {
-      console.error(err)
-      return res.status(500).end()
-    }
-    /**
-     * This is similar to the earlier API, except that we just return a singular value.
-     * The signature is therefore more reminisent of the "/temperature" API
-     */
-    res.json({
-      value: results['avg(value)'].toFixed(1)
-    })
-  })
-})
-
-app.get('/humidity/history', function (req, res) {
-  databaseOperations.fetchLatestReadings('humidity', 10, (err, results) => {
-    if (err) {
-      console.error(err)
-      return res.status(500).end()
-    }
-    res.json(results.reverse())
-  })
-})
-
-app.get('/humidity/range', function (req, res) {
-  const {start, end} = req.query
-  databaseOperations.fetchReadingsBetweenTime('humidity', start, end, (err, results) => {
-    if (err) {
-      console.error(err)
-      return res.status(500).end()
-    }
-    res.json(results)
-  })
-})
-
-app.get('/humidity/average', function (req, res) {
-  const {start, end} = req.query
-  databaseOperations.getAverageOfReadingsBetweenTime('humidity', start, end, (err, results) => {
-    if (err) {
-      console.error(err)
-      return res.status(500).end()
-    }
-    res.json({
-      value: results['avg(value)'].toFixed(1)
-    })
-  })
-})
-
-app.get('/humidity', function (req, res) {
-  res.json({
-    value: getCachedSensorReadings.getHumidity().toFixed(1)
-  })
-})
-
-/**
- * Import the external dependencies required, for us this is:
- * 1. The native http module
- * 2. The socket.io module that we installed
- * 3. THe subscribe and unsibscribe functions from the notifier module
- */
-const http = require('http')
-const socketIo = require('socket.io')
-const {subscribe, unsubscribe} = require('./notifier')
-
-/**
- * Create a new HTTP server that wraps the "app" object that defined our server
- */
-const httpServer = http.Server(app)
-
-/**
- * Socket.io implements its own routes on top of the existing ones by wrapping our HTTP server
- */
-const io = socketIo(httpServer, {
-  allowEIO3: true,
-  cors: {
-    origin: '*',
-  }
-});
-
-io.on('connection', socket => {
-  /**
-   * This callback is called everytime a new client successfully makes a websocket connection with our server
-   */
-  console.log(`User connected [${socket.id}]`)
-
-  /**
-   * The event listeners are defined inside the callback function because we need to access the "socket" instance, to emit changes to the client
-   * The "pushTemperature" and "pushHumidity" listeners are called on change of temperature and humidity respectively.
-   */
-  const pushTemperature = newTemperature => {
-    socket.emit('new-temperature', {
-      value: newTemperature
-    })
-  }
-
-  const pushHumidity = newHumidity => {
-    socket.emit('new-humidity', {
-      value: newHumidity
-    })
-  }
-
-  /**
-   * Subscribe the listeners that we just defined to the "temperature" and "humidity" events
-   */
-  subscribe(pushTemperature, 'temperature')
-
-  subscribe(pushHumidity, 'humidity')
-
-  socket.on('disconnect', () => {
-    /**
-     * Finally, when the connection is closed, unsibscribe the listeners from their events
-     */
-    unsubscribe(pushTemperature, 'temperature')
-    unsubscribe(pushHumidity, 'humidity')
-  })
-})
-
-/**
- * The httpsServer.listen method is called. This exposes the routes we defined for the "app" instance as well
- */
-httpServer.listen(3000, function () {
-  console.log('Server listening on port 3000')
-})
-
-/**
- * The app.listen metdhod invocation from the previous version is removed, in place of the httpServer.listen method
- */
-// app.listen(3000, function () {
-//   console.log('Server listening on port 3000')
-// })
+}, 4000)
